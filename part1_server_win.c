@@ -3,19 +3,21 @@
 #include <stdlib.h>
 #include <string.h>
  
+#define SEA_SIZE 6
+ 
 struct Environment
 {
-   int sea[6][6];
+	int sea[SEA_SIZE][SEA_SIZE];
 };
 
 void init(struct Environment * environment)
 {
 	srand(time(NULL));
-	for (int i = 0 ; i < 6 ; i++)
+	for (int i = 0 ; i < SEA_SIZE ; i++)
 	{
-		for (int j = 0 ; j < 6 ; j++)
+		for (int j = 0 ; j < SEA_SIZE ; j++)
 		{
-			if (rand() % 2 && i < 5 && j < 5)
+			if (rand() % 2 && i < SEA_SIZE-1 && j < SEA_SIZE-1)
 			{
 
 				if (
@@ -25,15 +27,15 @@ void init(struct Environment * environment)
 					environment->sea[i+1][j+1] != 0 && environment->sea[i+1][j+1] != 1 && 
 					((i == 0 && j == 0) || environment->sea[i-1][j-1] != 1) &&
 					((j == 0) || environment->sea[i][j-1] != 1) &&
-					((i == 5 && j == 0) || environment->sea[i+1][j-1] != 1) &&
-					((i == 4 && j == 0) || environment->sea[i+2][j-1] != 1) &&
-					((i == 4) || environment->sea[i+2][j] != 1) &&
-					((i == 4 && j == 5) || environment->sea[i+2][j+1] != 1) &&
-					((i == 4 && j == 4) || environment->sea[i+2][j+2] != 1) &&
-					((i == 5 && j == 4) || environment->sea[i+1][j+2] != 1) &&
-					((j == 4) || environment->sea[i][j+2] != 1) &&
-					((i == 0 && j == 4) || environment->sea[i-1][j+2] != 1) &&
-					((i == 0 && j == 5) || environment->sea[i-1][j+1] != 1) &&
+					((i == SEA_SIZE-1 && j == 0) || environment->sea[i+1][j-1] != 1) &&
+					((i == SEA_SIZE-2 && j == 0) || environment->sea[i+2][j-1] != 1) &&
+					((i == SEA_SIZE-2) || environment->sea[i+2][j] != 1) &&
+					((i == SEA_SIZE-2 && j == SEA_SIZE-1) || environment->sea[i+2][j+1] != 1) &&
+					((i == SEA_SIZE-2 && j == SEA_SIZE-2) || environment->sea[i+2][j+2] != 1) &&
+					((i == SEA_SIZE-1 && j == SEA_SIZE-2) || environment->sea[i+1][j+2] != 1) &&
+					((j == SEA_SIZE-2) || environment->sea[i][j+2] != 1) &&
+					((i == 0 && j == SEA_SIZE-2) || environment->sea[i-1][j+2] != 1) &&
+					((i == 0 && j == SEA_SIZE-1) || environment->sea[i-1][j+1] != 1) &&
 					((i == 0) || environment->sea[i-1][j] != 1)
 					)
 				{
@@ -53,11 +55,11 @@ void init(struct Environment * environment)
 					environment->sea[i][j] != 0 && environment->sea[i][j] != 1 && 
 					((i == 0 && j == 0) || environment->sea[i-1][j-1] != 1) &&
 					((j == 0) || environment->sea[i][j-1] != 1) &&
-					((i == 5 && j == 0) || environment->sea[i+1][j-1] != 1) &&
-					((i == 5) || environment->sea[i+1][j] != 1) &&
-					((i == 5 && j == 5) || environment->sea[i+1][j+1] != 1) &&
-					((j == 5) || environment->sea[i][j+1] != 1) &&
-					((i == 0 && j == 5) || environment->sea[i-1][j+1] != 1) &&
+					((i == SEA_SIZE-1 && j == 0) || environment->sea[i+1][j-1] != 1) &&
+					((i == SEA_SIZE-1) || environment->sea[i+1][j] != 1) &&
+					((i == SEA_SIZE-1 && j == SEA_SIZE-1) || environment->sea[i+1][j+1] != 1) &&
+					((j == SEA_SIZE-1) || environment->sea[i][j+1] != 1) &&
+					((i == 0 && j == SEA_SIZE-1) || environment->sea[i-1][j+1] != 1) &&
 					((i == 0) || environment->sea[i-1][j] != 1)
 					)
 				{
