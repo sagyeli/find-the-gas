@@ -114,6 +114,8 @@ void startListening(struct Environment * environment)
 
 	char sendBuff[1025];
 
+	srand(time(NULL));
+
 	listenfd = socket(AF_INET, SOCK_STREAM, 0);
 	memset(&serv_addr, '0', sizeof(serv_addr));
 	memset(sendBuff, '0', sizeof(sendBuff)); 
@@ -145,7 +147,7 @@ void startListening(struct Environment * environment)
 			}
 			else if (environment->number_of_active_users == NUMBER_OF_USERS)
 			{
-				printf("All the users are logged in. Hooray!\r\n");
+				printf("All the users are logged in. Hooray!\r\n\r\n");
 				break;
 			}
 		}
@@ -157,13 +159,24 @@ void startListening(struct Environment * environment)
 
 	printf("I just created a sea map and here is how it looks like:\r\n");
 	showSea(environment);
+	printf("\r\n");
+
+	environment->user_who_has_the_turn = rand() % environment->number_of_active_users;
+	printf("I also picked up the user who will have the first turn. It will be user no. %d which ahs the ID %d", environment->user_who_has_the_turn, environment->users[environment->user_who_has_the_turn]);
+	printf("\r\n");
 
 	while(1)
 	{
 		for (i = 0 ; i < environment->number_of_active_users ; i++)
 		{
-			printf("sending stuff to user with the ID %d\r\n", environment->users[i]);
-			snprintf(sendBuff, sizeof(sendBuff), "Bla bla bla...\r\n");
+			if (i == environment->user_who_has_the_turn)
+			{
+				snprintf(sendBuff, sizeof(sendBuff), "It's your turn bro, do your thing...\r\n");
+			}
+			else
+			{
+				snprintf(sendBuff, sizeof(sendBuff), "Its user ID %d's turn. Waiting for him to make a move...\r\n", environment->users[environment->user_who_has_the_turn]);
+			}
 			write(environment->users[i], sendBuff, strlen(sendBuff));
 		}	
 
