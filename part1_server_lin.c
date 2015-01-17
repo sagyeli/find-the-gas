@@ -12,16 +12,22 @@
 #define PORT_NUMBER 30000
 
 #define SEA_SIZE 6
-#define NUMBER_OF__USERS 2
+#define NUMBER_OF_USERS 2
  
 struct Environment
 {
 	int sea[SEA_SIZE][SEA_SIZE];
-	int users[NUMBER_OF__USERS];
+	int users[NUMBER_OF_USERS];
 	int number_of_active_users;
+	int user_who_has_the_turn;
 };
 
 void init(struct Environment * environment)
+{
+	environment->number_of_active_users = 0;
+}
+
+void generateSea(struct Environment * environment)
 {
 	int i, j;
 	
@@ -85,8 +91,20 @@ void init(struct Environment * environment)
 			}
 		}
 	}
+}
 
-	environment->number_of_active_users = 0;
+void showSea(struct Environment * environment)
+{
+	int i, j;
+
+	for (i = 0 ; i < SEA_SIZE ; i++)
+	{
+		for (j = 0 ; j < SEA_SIZE ; j++)
+		{
+			printf("%d", environment->sea[i][j]);
+		}
+		printf("\r\n");
+	}
 }
 
 void startListening(struct Environment * environment)
@@ -110,7 +128,7 @@ void startListening(struct Environment * environment)
 
 	while(1)
 	{
-		if (environment->number_of_active_users < NUMBER_OF__USERS)
+		if (environment->number_of_active_users < NUMBER_OF_USERS)
 		{
 			connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);			
 
@@ -122,39 +140,35 @@ void startListening(struct Environment * environment)
 
 			printf("A new user just logged in with the ID: %d\r\n", connfd);
 
-			if (environment->number_of_active_users > NUMBER_OF__USERS) {
+			if (environment->number_of_active_users > NUMBER_OF_USERS) {
 				printf("ERROR: Too many users were logged in!\r\n");
 			}
-			else if (environment->number_of_active_users == NUMBER_OF__USERS)
+			else if (environment->number_of_active_users == NUMBER_OF_USERS)
 			{
 				printf("All the users are logged in. Hooray!\r\n");
+				break;
 			}
 		}
-		else
+
+		sleep(1);
+	}
+
+	generateSea(environment);
+
+	printf("I just created a sea map and here is how it looks like:\r\n");
+	showSea(environment);
+
+	while(1)
+	{
+		for (i = 0 ; i < environment->number_of_active_users ; i++)
 		{
-			for (i = 0 ; i < environment->number_of_active_users ; i++)
-			{
-				snprintf(sendBuff, sizeof(sendBuff), "Bla bla bla...\r\n");
-				write(environment->users[i], sendBuff, strlen(sendBuff));
-			}
-		}		
+			printf("sending stuff to user with the ID %d\r\n", environment->users[i]);
+			snprintf(sendBuff, sizeof(sendBuff), "Bla bla bla...\r\n");
+			write(environment->users[i], sendBuff, strlen(sendBuff));
+		}	
 
 		// close(connfd);
 		sleep(1);
-	}
-}
-
-void showSea(struct Environment * environment)
-{
-	int i, j;
-
-	for (i = 0 ; i < SEA_SIZE ; i++)
-	{
-		for (j = 0 ; j < SEA_SIZE ; j++)
-		{
-			printf("%d", environment->sea[i][j]);
-		}
-		printf("\r\n");
 	}
 }
  
@@ -164,9 +178,6 @@ int main()
 
 	init(& environment);
 	startListening(& environment);
-	
-
-	showSea(& environment);
 
 	return 0;
 }
