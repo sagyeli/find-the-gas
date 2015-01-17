@@ -2,20 +2,33 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
- 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/types.h>
+
+#define PORT_NUMBER 30000
+
 #define SEA_SIZE 6
+#define NUMBER_OF__USERS 2
  
 struct Environment
 {
 	int sea[SEA_SIZE][SEA_SIZE];
+	int users[NUMBER_OF__USERS];
+	int number_of_active_users;
 };
 
 void init(struct Environment * environment)
 {
+	int i, j;
+	
 	srand(time(NULL));
-	for (int i = 0 ; i < SEA_SIZE ; i++)
+	for (i = 0 ; i < SEA_SIZE ; i++)
 	{
-		for (int j = 0 ; j < SEA_SIZE ; j++)
+		for (j = 0 ; j < SEA_SIZE ; j++)
 		{
 			if (rand() % 2 && i < SEA_SIZE-1 && j < SEA_SIZE-1)
 			{
@@ -72,26 +85,77 @@ void init(struct Environment * environment)
 			}
 		}
 	}
+
+	environment->number_of_active_users = 0;
+}
+
+void startListening(struct Environment * environment)
+{
+	int listenfd = 0, connfd = 0;
+	struct sockaddr_in serv_addr; 
+
+	char sendBuff[1025];
+
+	listenfd = socket(AF_INET, SOCK_STREAM, 0);
+	memset(&serv_addr, '0', sizeof(serv_addr));
+	memset(sendBuff, '0', sizeof(sendBuff)); 
+
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	serv_addr.sin_port = htons(PORT_NUMBER); 
+
+	bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)); 
+
+	listen(listenfd, 10); 
+
+	while(1)
+	{
+		connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);
+
+		if (environment->number_of_active_users < NUMBER_OF__USERS)
+		{
+			environment->users[environment->number_of_active_users] = connfd;
+			environment->number_of_active_users++;
+
+			snprintf(sendBuff, sizeof(sendBuff), "Hello new user!\r\n");
+			write(connfd, sendBuff, strlen(sendBuff));
+
+			printf("A new user just logged in with the ID: %d\r\n", connfd);
+		}
+		else
+		{
+			snprintf(sendBuff, sizeof(sendBuff), "Sorry, there is no room of another user!\r\n");
+			write(connfd, sendBuff, strlen(sendBuff));			
+		}		
+
+		// close(connfd);
+		sleep(1);
+	}
 }
 
 void showSea(struct Environment * environment)
 {
-	for (int i = 0 ; i < 6 ; i++)
+	int i, j;
+
+	for (i = 0 ; i < SEA_SIZE ; i++)
 	{
-		for (int j = 0 ; j < 6 ; j++)
+		for (j = 0 ; j < SEA_SIZE ; j++)
 		{
 			printf("%d", environment->sea[i][j]);
 		}
-		printf("\n");
+		printf("\r\n");
 	}
 }
  
 int main()
 {
-   struct Environment environment;
+	struct Environment environment;
 
-   init(& environment);
-   showSea(& environment);
+	init(& environment);
+	startListening(& environment);
+	
 
-   return 0;
+	showSea(& environment);
+
+	return 0;
 }
