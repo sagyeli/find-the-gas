@@ -91,7 +91,7 @@ void init(struct Environment * environment)
 
 void startListening(struct Environment * environment)
 {
-	int listenfd = 0, connfd = 0;
+	int listenfd = 0, connfd = 0, i;
 	struct sockaddr_in serv_addr; 
 
 	char sendBuff[1025];
@@ -110,10 +110,10 @@ void startListening(struct Environment * environment)
 
 	while(1)
 	{
-		connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);
-
 		if (environment->number_of_active_users < NUMBER_OF__USERS)
 		{
+			connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);			
+
 			environment->users[environment->number_of_active_users] = connfd;
 			environment->number_of_active_users++;
 
@@ -121,11 +121,22 @@ void startListening(struct Environment * environment)
 			write(connfd, sendBuff, strlen(sendBuff));
 
 			printf("A new user just logged in with the ID: %d\r\n", connfd);
+
+			if (environment->number_of_active_users > NUMBER_OF__USERS) {
+				printf("ERROR: Too many users were logged in!\r\n");
+			}
+			else if (environment->number_of_active_users == NUMBER_OF__USERS)
+			{
+				printf("All the users are logged in. Hooray!\r\n");
+			}
 		}
 		else
 		{
-			snprintf(sendBuff, sizeof(sendBuff), "Sorry, there is no room of another user!\r\n");
-			write(connfd, sendBuff, strlen(sendBuff));			
+			for (i = 0 ; i < environment->number_of_active_users ; i++)
+			{
+				snprintf(sendBuff, sizeof(sendBuff), "Bla bla bla...\r\n");
+				write(environment->users[i], sendBuff, strlen(sendBuff));
+			}
 		}		
 
 		// close(connfd);
