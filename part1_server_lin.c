@@ -109,10 +109,10 @@ void showSea(struct Environment * environment)
 
 void startListening(struct Environment * environment)
 {
-	int listenfd = 0, connfd = 0, i;
+	int listenfd = 0, connfd = 0, n, i;
 	struct sockaddr_in serv_addr; 
 
-	char sendBuff[1025];
+	char sendBuff[1025], recvBuff[1024];
 
 	srand(time(NULL));
 
@@ -172,13 +172,25 @@ void startListening(struct Environment * environment)
 			if (i == environment->user_who_has_the_turn)
 			{
 				snprintf(sendBuff, sizeof(sendBuff), "It's your turn bro, do your thing...\r\n");
+				write(environment->users[i], sendBuff, strlen(sendBuff));
+
+				snprintf(sendBuff, sizeof(sendBuff), "'YOUR_TURN'");
+				write(environment->users[i], sendBuff, strlen(sendBuff));
 			}
 			else
 			{
 				snprintf(sendBuff, sizeof(sendBuff), "Its user ID %d's turn. Waiting for him to make a move...\r\n", environment->users[environment->user_who_has_the_turn]);
+				write(environment->users[i], sendBuff, strlen(sendBuff));
+
+				snprintf(sendBuff, sizeof(sendBuff), "'NOT_YOUR_TURN'");
+				write(environment->users[i], sendBuff, strlen(sendBuff));
 			}
-			write(environment->users[i], sendBuff, strlen(sendBuff));
-		}	
+		}
+
+		read(environment->users[environment->user_who_has_the_turn], recvBuff, sizeof(recvBuff)-1);
+		printf("User number %d answered: %s", environment->user_who_has_the_turn, recvBuff);
+
+		environment->user_who_has_the_turn = (environment->user_who_has_the_turn + 1) % environment->number_of_active_users;
 
 		// close(connfd);
 		sleep(1);
