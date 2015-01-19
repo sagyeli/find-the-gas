@@ -20,11 +20,13 @@ struct Environment
 	int users[NUMBER_OF_USERS];
 	int number_of_active_users;
 	int user_who_has_the_turn;
+	int current_turn_number;
 };
 
 void init(struct Environment * environment)
 {
 	environment->number_of_active_users = 0;
+	environment->current_turn_number = 0;
 }
 
 void generateSea(struct Environment * environment)
@@ -169,11 +171,13 @@ void startListening(struct Environment * environment)
 
 	while(1)
 	{
+		environment->current_turn_number++;
+
 		for (i = 0 ; i < environment->number_of_active_users ; i++)
 		{
 			if (i == environment->user_who_has_the_turn)
 			{
-				snprintf(sendBuff, sizeof(sendBuff), "It's your turn bro, do your thing...\r\n");
+				snprintf(sendBuff, sizeof(sendBuff), "Turn number %d is your turn bro, do your thing...\r\n", environment->current_turn_number);
 				write(environment->users[i], sendBuff, strlen(sendBuff));
 
 				snprintf(sendBuff, sizeof(sendBuff), "'YOUR_TURN'");
@@ -181,7 +185,7 @@ void startListening(struct Environment * environment)
 			}
 			else
 			{
-				snprintf(sendBuff, sizeof(sendBuff), "Its user ID %d's turn. Waiting for him to make a move...\r\n", environment->users[environment->user_who_has_the_turn]);
+				snprintf(sendBuff, sizeof(sendBuff), "Turn number %d is user ID %d's turn. Waiting for him to make a move...\r\n", environment->current_turn_number, environment->users[environment->user_who_has_the_turn]);
 				write(environment->users[i], sendBuff, strlen(sendBuff));
 
 				snprintf(sendBuff, sizeof(sendBuff), "'NOT_YOUR_TURN'");
@@ -195,6 +199,9 @@ void startListening(struct Environment * environment)
 		usersInput[1] = atoi((const char *)strtok(NULL, ","));
 
 		printf("User number %d answered: latitude=%d, longitude=%d\r\n", environment->user_who_has_the_turn, usersInput[0], usersInput[1]);
+
+		printf("The map currently looks like this:\r\n");
+		showSea(environment);
 
 		environment->user_who_has_the_turn = (environment->user_who_has_the_turn + 1) % environment->number_of_active_users;
 
