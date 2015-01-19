@@ -114,6 +114,8 @@ void startListening(struct Environment * environment)
 
 	char sendBuff[1025], recvBuff[1024];
 
+	int usersInput[2];
+
 	srand(time(NULL));
 
 	listenfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -188,7 +190,11 @@ void startListening(struct Environment * environment)
 		}
 
 		read(environment->users[environment->user_who_has_the_turn], recvBuff, sizeof(recvBuff)-1);
-		printf("User number %d answered: %s", environment->user_who_has_the_turn, recvBuff);
+
+		usersInput[0] = atoi((const char *)strtok(recvBuff, ","));
+		usersInput[1] = atoi((const char *)strtok(NULL, ","));
+
+		printf("User number %d answered: latitude=%d, longitude=%d\r\n", environment->user_who_has_the_turn, usersInput[0], usersInput[1]);
 
 		environment->user_who_has_the_turn = (environment->user_who_has_the_turn + 1) % environment->number_of_active_users;
 
