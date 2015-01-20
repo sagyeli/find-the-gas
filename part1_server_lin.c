@@ -138,7 +138,7 @@ void startListening(struct Environment * environment)
 
 	char sendBuff[1025], recvBuff[1024];
 
-	int usersInput[2];
+	int usersInput[2], inspectionResult;
 
 	srand(time(NULL));
 
@@ -222,13 +222,21 @@ void startListening(struct Environment * environment)
 
 		printf("User number %d answered: latitude=%d, longitude=%d\r\n", environment->user_who_has_the_turn, usersInput[0], usersInput[1]);
 
-		snprintf(sendBuff, sizeof(sendBuff), "'SPOT_TYPE_%d'", getSpotStatus(environment, usersInput[0], usersInput[1]));
+		inspectionResult = getSpotStatus(environment, usersInput[0], usersInput[1]);
+		
+		snprintf(sendBuff, sizeof(sendBuff), "'SPOT_TYPE_%d'", inspectionResult);
 		write(environment->users[environment->user_who_has_the_turn], sendBuff, strlen(sendBuff));
 
 		printf("The map currently looks like this:\r\n");
 		showSea(environment);
 
-		environment->user_who_has_the_turn = (environment->user_who_has_the_turn + 1) % environment->number_of_active_users;
+		if (inspectionResult == 1 || inspectionResult == 2)
+		{
+		}
+		else
+		{
+			environment->user_who_has_the_turn = (environment->user_who_has_the_turn + 1) % environment->number_of_active_users;
+		}
 
 		// close(connfd);
 		sleep(1);
