@@ -278,7 +278,7 @@ void startListening(struct Environment * environment)
 		usersInput[0] = atoi((const char *)strtok(recvBuff, ","));
 		usersInput[1] = atoi((const char *)strtok(NULL, ","));
 
-		printf("User number %d answered: latitude=%d, longitude=%d\r\n", environment->user_who_has_the_turn, usersInput[0], usersInput[1]);
+		printf("User number %d answered: row=%d, column=%d\r\n", environment->user_who_has_the_turn, usersInput[0], usersInput[1]);
 
 		inspectionResult = getSetSpotStatus(environment, environment->users[environment->user_who_has_the_turn], usersInput[0], usersInput[1]);
 
@@ -306,8 +306,10 @@ void startListening(struct Environment * environment)
 			return;
 		}
 		
-		snprintf(sendBuff, sizeof(sendBuff), "'SPOT_TYPE_%d'", inspectionResult);
-		write(environment->users[environment->user_who_has_the_turn], sendBuff, strlen(sendBuff));
+		for (i = 0 ; i < environment->number_of_active_users ; i++) {
+			snprintf(sendBuff, sizeof(sendBuff), "'SPOT_TYPE_%d'", inspectionResult);
+			write(environment->users[i], sendBuff, strlen(sendBuff));
+		}
 
 		printf("The map currently looks like this:\r\n");
 		showSea(environment);

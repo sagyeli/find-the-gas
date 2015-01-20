@@ -11,6 +11,11 @@
 
 #define PORT_NUMBER 30000
 
+#define SEA_SIZE 6
+
+int knownSea[SEA_SIZE][SEA_SIZE];
+int isMyTurn;
+
 char *replace_str(char *str, char *orig, char *rep)
 {
 	static char buffer[9096];
@@ -27,15 +32,39 @@ char *replace_str(char *str, char *orig, char *rep)
 	return buffer;
 }
 
+void showKnownSea()
+{
+	int i, j;
+
+	for (i = 0 ; i < SEA_SIZE ; i++)
+	{
+		for (j = 0 ; j < SEA_SIZE ; j++)
+		{
+			printf("%d", knownSea[i][j]);
+		}
+		printf("\r\n");
+	}
+
+	isMyTurn = 0;
+}
+
 int main(int argc, char *argv[])
 {
-	int sockfd = 0, n = 0;
+	int sockfd = 0, n = 0, i, j;
 	char recvBuff[1024], sendBuff[1024];
 	int input[2];
-	struct sockaddr_in serv_addr; 
+	struct sockaddr_in serv_addr;
 
 	memset(recvBuff, '0', sizeof(recvBuff));
-	memset(sendBuff, '0', sizeof(sendBuff)); 
+	memset(sendBuff, '0', sizeof(sendBuff));
+
+	for (i = 0 ; i < SEA_SIZE ; i++)
+	{
+		for (j = 0 ; j < SEA_SIZE ; j++)
+		{
+			knownSea[i][j] = -1;
+		}
+	}
 
     if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
@@ -63,19 +92,21 @@ int main(int argc, char *argv[])
     while ( (n = read(sockfd, recvBuff, sizeof(recvBuff)-1)) > 0)
     {
 	recvBuff[n] = 0;
-	if(fputs(replace_str(replace_str(recvBuff, "'YOUR_TURN'", ""), "'NOT_YOUR_TURN'", ""), stdout) == EOF)
+	if(fputs(replace_str(replace_str(replace_str(replace_str(replace_str(recvBuff, "'YOUR_TURN'", ""), "'NOT_YOUR_TURN'", ""), "'SPOT_TYPE_0'", ""), "'SPOT_TYPE_1'", ""), "'SPOT_TYPE_2'", ""), stdout) == EOF)
 	{
 		printf("\n Error : Fputs error\n");
 	}
 
 	if (strstr(recvBuff, "'YOUR_TURN'") != NULL)
 	{
+		isMyTurn = 1;
+
 		printf("Yeah, it's my turn!\r\n");
 
-		printf("Enter latitude: ");
+		printf("Enter row: ");
 		scanf("%d", & input[0]);
 
-		printf("Enter longitude: ");
+		printf("Enter column: ");
 		scanf("%d", & input[1]);
 
 		snprintf(sendBuff, sizeof(sendBuff), "%d,%d\r\n", input[0], input[1]);
@@ -83,7 +114,42 @@ int main(int argc, char *argv[])
 	}
 	else if (strstr(recvBuff, "'NOT_YOUR_TURN'") != NULL)
 	{
+		isMyTurn = 0;
+
 		printf("Bummer, it's not my turn...\r\n");
+	}
+	else if (strstr(recvBuff, "'SPOT_TYPE_0'") != NULL)
+	{
+		if (isMyTurn)
+		{
+			knownSea[input[0]][input[1]] = 0;
+			printf("I didn't find anything. What a waste of time!\r\n");
+		}
+
+		printf("This is what I know about the sea:\r\n");
+		showKnownSea();
+	}
+	else if (strstr(recvBuff, "'SPOT_TYPE_1'") != NULL)
+	{
+		if (isMyTurn)
+		{
+			knownSea[input[0]][input[1]] = 1;
+			printf("I found a small gas pocket. Nice!\r\n");
+		}
+
+		printf("This is what I know about the sea:\r\n");
+		showKnownSea();
+	}
+	else if (strstr(recvBuff, "'SPOT_TYPE_2'") != NULL)
+	{
+		if (isMyTurn)
+		{
+			knownSea[input[0]][input[1]] = 2;
+			printf("Awsome! It looks like I hit the jackpot!!!\r\n");
+		}
+
+		printf("This is what I know about the sea:\r\n");
+		showKnownSea();
 	}
 
 	sleep(1);
