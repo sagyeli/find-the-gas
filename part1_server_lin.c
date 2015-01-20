@@ -12,12 +12,11 @@
 #define PORT_NUMBER 30000
 
 #define SEA_SIZE 6
-#define NUMBER_OF_USERS 2
  
 struct Environment
 {
 	int sea[SEA_SIZE][SEA_SIZE];
-	int users[NUMBER_OF_USERS];
+	int users[2];
 	int number_of_active_users;
 	int user_who_has_the_turn;
 	int current_turn_number;
@@ -109,14 +108,20 @@ void showSea(struct Environment * environment)
 	}
 }
 
-int getSpotStatus(struct Environment * environment, int lat, int lng)
+int getSetSpotStatus(struct Environment * environment, int userConnfd, int lat, int lng)
 {
-	if (!environment->sea[lat][lng])
+	if (environment->sea[lat][lng] == 0)
 	{
 		return 0;
 	}
+	else if (environment->sea[lat][lng] != 1)
+	{
+		return -1;
+	}
 	else
 	{
+		environment->sea[lat][lng] = userConnfd;
+
 		if ((lat < SEA_SIZE - 1 && environment->sea[lat+1][lng]) ||
 		    (lat > 0 && environment->sea[lat-1][lng]) ||
 		    (lng < SEA_SIZE - 1 && environment->sea[lat][lng+1]) ||
@@ -131,6 +136,59 @@ int getSpotStatus(struct Environment * environment, int lat, int lng)
 	}
 }
 
+int getWinnerUserConnfd(struct Environment * environment)
+{
+	int randomUserAConnfd = -1, randomUserAHitsCount = 0,
+	    randomUserBConnfd = -1, randomUserBHitsCount = 0,
+	    totalPocketsCount = 0,
+	    i, j;
+	
+
+	for (i = 0 ; i < SEA_SIZE ; i++)
+	{
+		for (j = 0 ; j < SEA_SIZE ; j++)
+		{
+			if (environment->sea[i][j] != 0)
+			{
+				if (environment->sea[i][j] != 1)
+				{
+					if (randomUserAConnfd == -1)
+					{
+						randomUserAConnfd = environment->sea[i][j];
+					}
+					else if (randomUserBConnfd == -1)
+					{
+						randomUserBConnfd = environment->sea[i][j];
+					}
+
+					if (randomUserAConnfd == environment->sea[i][j])
+					{
+						randomUserAHitsCount++;
+					}
+					else if (randomUserBConnfd == environment->sea[i][j])
+					{
+						randomUserBHitsCount++;
+					}
+				}
+
+				totalPocketsCount++;
+			}
+		}
+	}
+
+	if (randomUserAHitsCount > totalPocketsCount / 2)
+	{
+		return randomUserAConnfd;
+	}
+
+	if (randomUserBHitsCount > totalPocketsCount / 2)
+	{
+		return randomUserBConnfd;
+	}
+
+	return 0;
+}
+
 void startListening(struct Environment * environment)
 {
 	int listenfd = 0, connfd = 0, n, i;
@@ -138,7 +196,7 @@ void startListening(struct Environment * environment)
 
 	char sendBuff[1025], recvBuff[1024];
 
-	int usersInput[2], inspectionResult;
+	int usersInput[2], inspectionResult, winnerCheck;
 
 	srand(time(NULL));
 
@@ -156,7 +214,7 @@ void startListening(struct Environment * environment)
 
 	while(1)
 	{
-		if (environment->number_of_active_users < NUMBER_OF_USERS)
+		if (environment->number_of_active_users < 2)
 		{
 			connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);			
 
@@ -168,10 +226,10 @@ void startListening(struct Environment * environment)
 
 			printf("A new user just logged in with the ID: %d\r\n", connfd);
 
-			if (environment->number_of_active_users > NUMBER_OF_USERS) {
+			if (environment->number_of_active_users > 2) {
 				printf("ERROR: Too many users were logged in!\r\n");
 			}
-			else if (environment->number_of_active_users == NUMBER_OF_USERS)
+			else if (environment->number_of_active_users == 2)
 			{
 				printf("All the users are logged in. Hooray!\r\n\r\n");
 				break;
@@ -222,13 +280,39 @@ void startListening(struct Environment * environment)
 
 		printf("User number %d answered: latitude=%d, longitude=%d\r\n", environment->user_who_has_the_turn, usersInput[0], usersInput[1]);
 
-		inspectionResult = getSpotStatus(environment, usersInput[0], usersInput[1]);
+		inspectionResult = getSetSpotStatus(environment, environment->users[environment->user_who_has_the_turn], usersInput[0], usersInput[1]);
+
+		winnerCheck = getWinnerUserConnfd(environment);
+		if (winnerCheck)
+		{
+			for (i = 0 ; i < environment->number_of_active_users ; i++)
+			{
+				if (environment->users[i] == winnerCheck)
+				{
+					snprintf(sendBuff, sizeof(sendBuff), "Dude, your awsome. YOU WON!!!\r\n");
+					write(environment->users[i], sendBuff, strlen(sendBuff));
+
+					printf("We have a winner! It's the user number %d with the ID %d!!\r\n", i, winnerCheck);
+				}
+				else
+				{
+					snprintf(sendBuff, sizeof(sendBuff), "You lost man... never mind, maybe next time!\r\n");
+					write(environment->users[i], sendBuff, strlen(sendBuff));
+				}
+
+				close(environment->users[i]);
+			}
+
+			return;
+		}
 		
 		snprintf(sendBuff, sizeof(sendBuff), "'SPOT_TYPE_%d'", inspectionResult);
 		write(environment->users[environment->user_who_has_the_turn], sendBuff, strlen(sendBuff));
 
 		printf("The map currently looks like this:\r\n");
 		showSea(environment);
+
+		
 
 		if (inspectionResult == 1 || inspectionResult == 2)
 		{
@@ -238,7 +322,6 @@ void startListening(struct Environment * environment)
 			environment->user_who_has_the_turn = (environment->user_who_has_the_turn + 1) % environment->number_of_active_users;
 		}
 
-		// close(connfd);
 		sleep(1);
 	}
 }
