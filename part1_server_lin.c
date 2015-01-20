@@ -109,6 +109,28 @@ void showSea(struct Environment * environment)
 	}
 }
 
+int getSpotStatus(struct Environment * environment, int lat, int lng)
+{
+	if (!environment->sea[lat][lng])
+	{
+		return 0;
+	}
+	else
+	{
+		if ((lat < SEA_SIZE - 1 && environment->sea[lat+1][lng]) ||
+		    (lat > 0 && environment->sea[lat-1][lng]) ||
+		    (lng < SEA_SIZE - 1 && environment->sea[lat][lng+1]) ||
+		    (lng > 0 && environment->sea[lat][lng-1]))
+		{
+			return 2;
+		}
+		else
+		{
+			return 1;
+		}
+	}
+}
+
 void startListening(struct Environment * environment)
 {
 	int listenfd = 0, connfd = 0, n, i;
@@ -199,6 +221,9 @@ void startListening(struct Environment * environment)
 		usersInput[1] = atoi((const char *)strtok(NULL, ","));
 
 		printf("User number %d answered: latitude=%d, longitude=%d\r\n", environment->user_who_has_the_turn, usersInput[0], usersInput[1]);
+
+		snprintf(sendBuff, sizeof(sendBuff), "'SPOT_TYPE_%d'", getSpotStatus(environment, usersInput[0], usersInput[1]));
+		write(environment->users[environment->user_who_has_the_turn], sendBuff, strlen(sendBuff));
 
 		printf("The map currently looks like this:\r\n");
 		showSea(environment);
