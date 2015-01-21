@@ -50,10 +50,19 @@ void showKnownSea()
 
 int main(int argc, char *argv[])
 {
+	char * serverIPAddress;
 	int sockfd = 0, n = 0, i, j;
 	char recvBuff[1024], sendBuff[1024], * buffer;
 	int input[2];
 	struct sockaddr_in serv_addr;
+
+	if (argc < 2)
+	{
+		printf("ERROR: no IP address was entered!\r\n");
+		return 0;
+	}
+
+	serverIPAddress = argv[1];
 
 	memset(recvBuff, '0', sizeof(recvBuff));
 	memset(sendBuff, '0', sizeof(sendBuff));
@@ -77,7 +86,7 @@ int main(int argc, char *argv[])
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT_NUMBER); 
 
-    if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0)
+    if(inet_pton(AF_INET, serverIPAddress, &serv_addr.sin_addr)<=0)
     {
         printf("\n inet_pton error occured\n");
         return 1;
