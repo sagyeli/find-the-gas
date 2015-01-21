@@ -17,6 +17,7 @@ struct Environment
 {
 	int sea[SEA_SIZE][SEA_SIZE];
 	int users[2];
+	char * usersIPAddresses[2];
 	int number_of_active_users;
 	int user_who_has_the_turn;
 	int current_turn_number;
@@ -192,7 +193,9 @@ int getWinnerUserConnfd(struct Environment * environment)
 void startListening(struct Environment * environment)
 {
 	int listenfd = 0, connfd = 0, n, i;
-	struct sockaddr_in serv_addr; 
+	struct sockaddr_in serv_addr;
+	struct sockaddr_in client_addr;
+	socklen_t iLen = sizeof(struct sockaddr_in);
 
 	char sendBuff[1025], recvBuff[1024];
 
@@ -216,15 +219,16 @@ void startListening(struct Environment * environment)
 	{
 		if (environment->number_of_active_users < 2)
 		{
-			connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);			
+			connfd = accept(listenfd, (struct sockaddr*)&client_addr, &iLen);			
 
 			environment->users[environment->number_of_active_users] = connfd;
+			environment->usersIPAddresses[environment->number_of_active_users] = inet_ntoa(client_addr.sin_addr);
 			environment->number_of_active_users++;
 
 			snprintf(sendBuff, sizeof(sendBuff), "Hello new user!\r\n");
 			write(connfd, sendBuff, strlen(sendBuff));
 
-			printf("A new user just logged in with the ID: %d\r\n", connfd);
+			printf("A new user just logged in with the ID: %d with the IP address %s\r\n", connfd, inet_ntoa(client_addr.sin_addr));
 
 			if (environment->number_of_active_users > 2) {
 				printf("ERROR: Too many users were logged in!\r\n");
@@ -294,7 +298,7 @@ void startListening(struct Environment * environment)
 					snprintf(sendBuff, sizeof(sendBuff), "Dude, your awsome. YOU WON!!! Game WON in %d turns.\r\n", environment->current_turn_number);
 					write(environment->users[i], sendBuff, strlen(sendBuff));
 
-					printf("We have a winner! It's the user number %d with the ID %d!!\r\n", i, winnerCheck);
+					printf("We have a winner! It's the user number %d with the ID %d and %s IP address!!\r\n", i, winnerCheck, environment->usersIPAddresses[i]);
 				}
 				else
 				{
