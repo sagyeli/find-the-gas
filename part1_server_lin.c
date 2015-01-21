@@ -307,7 +307,7 @@ void startListening(struct Environment * environment)
 		}
 		
 		for (i = 0 ; i < environment->number_of_active_users ; i++) {
-			snprintf(sendBuff, sizeof(sendBuff), "'SPOT_TYPE_%d'", inspectionResult);
+			snprintf(sendBuff, sizeof(sendBuff), "'SPOT_TYPE_%d':%d,%d", inspectionResult, usersInput[0], usersInput[1]);
 			write(environment->users[i], sendBuff, strlen(sendBuff));
 		}
 

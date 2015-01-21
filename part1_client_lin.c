@@ -51,7 +51,7 @@ void showKnownSea()
 int main(int argc, char *argv[])
 {
 	int sockfd = 0, n = 0, i, j;
-	char recvBuff[1024], sendBuff[1024];
+	char recvBuff[1024], sendBuff[1024], * buffer;
 	int input[2];
 	struct sockaddr_in serv_addr;
 
@@ -92,7 +92,13 @@ int main(int argc, char *argv[])
     while ( (n = read(sockfd, recvBuff, sizeof(recvBuff)-1)) > 0)
     {
 	recvBuff[n] = 0;
-	if(fputs(replace_str(replace_str(replace_str(replace_str(replace_str(recvBuff, "'YOUR_TURN'", ""), "'NOT_YOUR_TURN'", ""), "'SPOT_TYPE_0'", ""), "'SPOT_TYPE_1'", ""), "'SPOT_TYPE_2'", ""), stdout) == EOF)
+	buffer = replace_str(replace_str(replace_str(replace_str(replace_str(recvBuff, "'YOUR_TURN'", ""), "'NOT_YOUR_TURN'", ""), "'SPOT_TYPE_0'", ""), "'SPOT_TYPE_1'", ""), "'SPOT_TYPE_2'", "");
+	if (strstr(recvBuff, "':") != NULL)
+	{
+		buffer = replace_str(buffer, buffer, "");
+	}
+
+	if(fputs(buffer, stdout) == EOF)
 	{
 		printf("\n Error : Fputs error\n");
 	}
@@ -122,9 +128,16 @@ int main(int argc, char *argv[])
 	{
 		if (isMyTurn)
 		{
-			knownSea[input[0]][input[1]] = 0;
 			printf("I didn't find anything. What a waste of time!\r\n");
 		}
+		else
+		{
+			printf("Yes! the other guy did not find anything. Good for me!\r\n");
+		}
+
+		input[0] = atoi((const char *)strtok(replace_str(recvBuff, "'SPOT_TYPE_0':", ""), ","));
+		input[1] = atoi((const char *)strtok(NULL, ","));
+		knownSea[input[0]][input[1]] = 0;
 
 		printf("This is what I know about the sea:\r\n");
 		showKnownSea();
@@ -133,9 +146,16 @@ int main(int argc, char *argv[])
 	{
 		if (isMyTurn)
 		{
-			knownSea[input[0]][input[1]] = 1;
 			printf("I found a small gas pocket. Nice!\r\n");
 		}
+		else
+		{
+			printf("The other guy found something... :(!\r\n");
+		}
+
+		input[0] = atoi((const char *)strtok(replace_str(recvBuff, "'SPOT_TYPE_1':", ""), ","));
+		input[1] = atoi((const char *)strtok(NULL, ","));
+		knownSea[input[0]][input[1]] = 1;
 
 		printf("This is what I know about the sea:\r\n");
 		showKnownSea();
@@ -144,9 +164,16 @@ int main(int argc, char *argv[])
 	{
 		if (isMyTurn)
 		{
-			knownSea[input[0]][input[1]] = 2;
 			printf("Awsome! It looks like I hit the jackpot!!!\r\n");
 		}
+		else
+		{
+			printf("Oh no, the other guy found something big!!\r\n");
+		}
+
+		input[0] = atoi((const char *)strtok(replace_str(recvBuff, "'SPOT_TYPE_2':", ""), ","));
+		input[1] = atoi((const char *)strtok(NULL, ","));
+		knownSea[input[0]][input[1]] = 2;
 
 		printf("This is what I know about the sea:\r\n");
 		showKnownSea();
