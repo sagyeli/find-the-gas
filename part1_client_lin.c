@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 	{
 		isMyTurn = 0;
 
-		printf("Bummer, it's not my turn...\r\n");
+		printf("Bummer, it's the opponent's turn...\r\n");
 	}
 	else if (strstr(recvBuff, "'SPOT_TYPE_0'") != NULL)
 	{

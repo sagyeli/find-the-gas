@@ -122,10 +122,10 @@ int getSetSpotStatus(struct Environment * environment, int userConnfd, int lat, 
 	{
 		environment->sea[lat][lng] = userConnfd;
 
-		if ((lat < SEA_SIZE - 1 && environment->sea[lat+1][lng]) ||
-		    (lat > 0 && environment->sea[lat-1][lng]) ||
-		    (lng < SEA_SIZE - 1 && environment->sea[lat][lng+1]) ||
-		    (lng > 0 && environment->sea[lat][lng-1]))
+		if ((lat < SEA_SIZE - 1 && environment->sea[lat+1][lng] == 1) ||
+		    (lat > 0 && environment->sea[lat-1][lng] == 1) ||
+		    (lng < SEA_SIZE - 1 && environment->sea[lat][lng+1] == 1) ||
+		    (lng > 0 && environment->sea[lat][lng-1] == 1))
 		{
 			return 2;
 		}
@@ -253,6 +253,8 @@ void startListening(struct Environment * environment)
 	{
 		environment->current_turn_number++;
 
+		printf("It is now turn number %d and user number %d with the ID %d is playing\r\n", environment->current_turn_number, environment->user_who_has_the_turn, environment->users[environment->user_who_has_the_turn]);
+
 		for (i = 0 ; i < environment->number_of_active_users ; i++)
 		{
 			if (i == environment->user_who_has_the_turn)
@@ -289,14 +291,14 @@ void startListening(struct Environment * environment)
 			{
 				if (environment->users[i] == winnerCheck)
 				{
-					snprintf(sendBuff, sizeof(sendBuff), "Dude, your awsome. YOU WON!!!\r\n");
+					snprintf(sendBuff, sizeof(sendBuff), "Dude, your awsome. YOU WON!!! Game WON in %d turns.\r\n", environment->current_turn_number);
 					write(environment->users[i], sendBuff, strlen(sendBuff));
 
 					printf("We have a winner! It's the user number %d with the ID %d!!\r\n", i, winnerCheck);
 				}
 				else
 				{
-					snprintf(sendBuff, sizeof(sendBuff), "You lost man... never mind, maybe next time!\r\n");
+					snprintf(sendBuff, sizeof(sendBuff), "You lost man... never mind, maybe next time! Game LOST in %d turns.\r\n", environment->current_turn_number);
 					write(environment->users[i], sendBuff, strlen(sendBuff));
 				}
 
