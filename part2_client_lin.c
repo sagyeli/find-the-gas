@@ -51,6 +51,7 @@ void showKnownSea()
 int main(int argc, char *argv[])
 {
 	char * serverIPAddress;
+	char * opponentIPAddress;
 	int listenfd = 0, connfd = 0, sockfd = 0, n = 0, i, j;
 	char recvBuff[1024], sendBuff[1024], * buffer;
 	int input[2];
@@ -113,7 +114,7 @@ int main(int argc, char *argv[])
     while ( (n = read(sockfd, recvBuff, sizeof(recvBuff)-1)) > 0)
     {
 	recvBuff[n] = 0;
-	buffer = replace_str(replace_str(replace_str(replace_str(replace_str(recvBuff, "'YOUR_TURN'", ""), "'NOT_YOUR_TURN'", ""), "'SPOT_TYPE_0'", ""), "'SPOT_TYPE_1'", ""), "'SPOT_TYPE_2'", "");
+	buffer = replace_str(replace_str(replace_str(replace_str(replace_str(replace_str(recvBuff, "'YOUR_TURN'", ""), "'NOT_YOUR_TURN'", ""), "'SPOT_TYPE_0'", ""), "'SPOT_TYPE_1'", ""), "'SPOT_TYPE_2'", ""), "'OPPONENT_IP'", "");
 	if (strstr(recvBuff, "':") != NULL)
 	{
 		buffer = replace_str(buffer, buffer, "");
@@ -124,6 +125,11 @@ int main(int argc, char *argv[])
 		printf("\n Error : Fputs error\n");
 	}
 
+	if (strstr(recvBuff, "'OPPONENT_IP'") != NULL)
+	{
+		opponentIPAddress = replace_str(recvBuff, "'OPPONENT_IP':", "");
+		printf("The opponent IP address is: %s\r\n", opponentIPAddress);
+	}	
 	if (strstr(recvBuff, "'YOUR_TURN'") != NULL)
 	{
 		isMyTurn = 1;

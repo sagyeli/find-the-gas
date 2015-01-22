@@ -253,6 +253,16 @@ void startListening(struct Environment * environment)
 	printf("I also picked up the user who will have the first turn. It will be user no. %d which ahs the ID %d", environment->user_who_has_the_turn, environment->users[environment->user_who_has_the_turn]);
 	printf("\r\n");
 
+	sleep(1);
+
+	snprintf(sendBuff, sizeof(sendBuff), "'OPPONENT_IP':%s", environment->usersIPAddresses[1]);
+	write(environment->users[0], sendBuff, strlen(sendBuff));
+
+	snprintf(sendBuff, sizeof(sendBuff), "'OPPONENT_IP':%s", environment->usersIPAddresses[0]);
+	write(environment->users[1], sendBuff, strlen(sendBuff));
+
+	sleep(1);
+
 	while(1)
 	{
 		environment->current_turn_number++;
