@@ -291,6 +291,11 @@ void startListening(struct Environment * environment)
 
 		read(environment->users[environment->user_who_has_the_turn], recvBuff, sizeof(recvBuff)-1);
 
+		if (strstr(recvBuff, "'USER_MESSAGE'") != NULL)
+		{
+			continue;
+		}
+
 		usersInput[0] = atoi((const char *)strtok(recvBuff, ","));
 		usersInput[1] = atoi((const char *)strtok(NULL, ","));
 

@@ -51,12 +51,14 @@ void showKnownSea()
 int main(int argc, char *argv[])
 {
 	char * serverIPAddress;
-	char * opponentIPAddress;
-	int listenfd = 0, connfd = 0, sockfd = 0, n = 0, i, j;
-	char recvBuff[1024], sendBuff[1024], * buffer;
-	int input[2];
+	char * opponentIPAddress = NULL;
+	int listenfd = 0, connfd = 0, sockfd = 0, sockfd2 = 0, n = 0, i, j;
+	char recvBuff[1024], recvBuff2[1024], sendBuff[1024], sendBuff2[1024], * buffer;
+	int input[2], inputOption;
+	char messageToOpponent[1024];
 	struct sockaddr_in serv_addr;
 	struct sockaddr_in serv_addr2;
+	struct sockaddr_in serv_addr3;
 
 	if (argc < 2)
 	{
@@ -67,7 +69,9 @@ int main(int argc, char *argv[])
 	serverIPAddress = argv[1];
 
 	memset(recvBuff, '0', sizeof(recvBuff));
+	memset(recvBuff2, '0', sizeof(recvBuff2));
 	memset(sendBuff, '0', sizeof(sendBuff));
+	memset(sendBuff2, '0', sizeof(sendBuff2));
 
 	for (i = 0 ; i < SEA_SIZE ; i++)
 	{
@@ -111,10 +115,10 @@ int main(int argc, char *argv[])
 
     listen(listenfd, 10);
 
-    while ( (n = read(sockfd, recvBuff, sizeof(recvBuff)-1)) > 0)
+    while ((n = read(sockfd, recvBuff, sizeof(recvBuff)-1)) > 0)
     {
 	recvBuff[n] = 0;
-	buffer = replace_str(replace_str(replace_str(replace_str(replace_str(replace_str(recvBuff, "'YOUR_TURN'", ""), "'NOT_YOUR_TURN'", ""), "'SPOT_TYPE_0'", ""), "'SPOT_TYPE_1'", ""), "'SPOT_TYPE_2'", ""), "'OPPONENT_IP'", "");
+	buffer = replace_str(replace_str(replace_str(replace_str(replace_str(replace_str(replace_str(recvBuff, "'YOUR_TURN'", ""), "'NOT_YOUR_TURN'", ""), "'SPOT_TYPE_0'", ""), "'SPOT_TYPE_1'", ""), "'SPOT_TYPE_2'", ""), "'OPPONENT_IP'", ""), "'NO_MESSAGE'", "");
 	if (strstr(recvBuff, "':") != NULL)
 	{
 		buffer = replace_str(buffer, buffer, "");
@@ -129,21 +133,66 @@ int main(int argc, char *argv[])
 	{
 		opponentIPAddress = replace_str(recvBuff, "'OPPONENT_IP':", "");
 		printf("The opponent IP address is: %s\r\n", opponentIPAddress);
-	}	
+
+		if((sockfd2 = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		{
+			printf("\n Error : Could not create socket \n");
+			return 1;
+		}
+
+		memset(&serv_addr3, '0', sizeof(serv_addr3)); 
+
+		serv_addr3.sin_family = AF_INET;
+		serv_addr3.sin_port = htons(argc > 3 ? atoi(argv[3]) : PORT_NUMBER); 
+
+		if(inet_pton(AF_INET, opponentIPAddress, &serv_addr3.sin_addr)<=0)
+		{
+			printf("\n inet_pton error occured\n");
+			return 1;
+		}
+
+		if( connect(sockfd2, (struct sockaddr *)&serv_addr3, sizeof(serv_addr3)) < 0)
+		{
+			printf("\n Error : Connect Failed\n");
+			return 1;
+		}
+
+		connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);
+	}
+
+	snprintf(sendBuff2, sizeof(sendBuff2), "'NO_MESSAGE'");
+	write(connfd, sendBuff2, strlen(sendBuff2));
+
 	if (strstr(recvBuff, "'YOUR_TURN'") != NULL)
 	{
 		isMyTurn = 1;
 
 		printf("Yeah, it's my turn!\r\n");
 
-		printf("Enter row: ");
-		scanf("%d", & input[0]);
+		printf("Should I make a move (1) or send a message to the opponent (2)? ");
+		scanf("%d", & inputOption);
+		if (inputOption == 1)
+		{
+			printf("Enter row: ");
+			scanf("%d", & input[0]);
 
-		printf("Enter column: ");
-		scanf("%d", & input[1]);
+			printf("Enter column: ");
+			scanf("%d", & input[1]);
 
-		snprintf(sendBuff, sizeof(sendBuff), "%d,%d\r\n", input[0], input[1]);
-		write(sockfd, sendBuff, strlen(sendBuff));
+			snprintf(sendBuff, sizeof(sendBuff), "%d,%d\r\n", input[0], input[1]);
+			write(sockfd, sendBuff, strlen(sendBuff));
+		}
+		else
+		{
+			printf("Enter a message to the opponent: ");
+			scanf("%s", messageToOpponent);
+
+			snprintf(sendBuff, sizeof(sendBuff), "'USER_MESSAGE'");
+			write(sockfd, sendBuff, strlen(sendBuff));
+
+			snprintf(sendBuff2, sizeof(sendBuff2), "The opponent says: %s\r\n", messageToOpponent);
+			write(connfd, sendBuff2, strlen(sendBuff2));
+		}
 	}
 	else if (strstr(recvBuff, "'NOT_YOUR_TURN'") != NULL)
 	{
@@ -204,6 +253,17 @@ int main(int argc, char *argv[])
 
 		printf("This is what I know about the sea:\r\n");
 		showKnownSea();
+	}
+
+	if (opponentIPAddress)
+	{
+		n = read(sockfd2, recvBuff2, sizeof(recvBuff)-1);
+		recvBuff2[n] = 0;
+
+		if(fputs(replace_str(recvBuff2, "'NO_MESSAGE'", ""), stdout) == EOF)
+		{
+			printf("\n Error : Fputs error\n");
+		}
 	}
 
 	sleep(1);
