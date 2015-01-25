@@ -160,8 +160,11 @@ int main(int argc, char *argv[])
 		connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);
 	}
 
-	snprintf(sendBuff2, sizeof(sendBuff2), "'NO_MESSAGE'");
-	write(connfd, sendBuff2, strlen(sendBuff2));
+	if (opponentIPAddress)
+	{
+		snprintf(sendBuff2, sizeof(sendBuff2), "'NO_MESSAGE'");
+		write(connfd, sendBuff2, strlen(sendBuff2));
+	}
 
 	if (strstr(recvBuff, "'YOUR_TURN'") != NULL)
 	{
